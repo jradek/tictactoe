@@ -1,7 +1,7 @@
 (ns tictactoe.core
   (:gen-class))
 
-(defn tracker [board-size]
+(defn new-tracker [board-size]
   (let [values (vec (replicate board-size 0))]
     {:rows  values
      :cols  values
@@ -9,14 +9,17 @@
      :rdiag 0}))
 
 
-(defn create-game [board-size]
+(defn new-game [board-size]
   {:board          (vec (replicate (* board-size board-size) nil))
    :board-size     board-size
    :current-player :x
-   :turns []
-   :win-tracker-x  (tracker board-size)
-   :win-tracker-o  (tracker board-size)})
+   :turns          []
+   :win-tracker-x  (new-tracker board-size)
+   :win-tracker-o  (new-tracker board-size)})
 
+;--------------------------------------------------------------------
+; PRINTING
+;--------------------------------------------------------------------
 
 (defn cell->str
   "Convert board cell value `c` to string"
@@ -40,6 +43,7 @@
     (doseq [l lines]
       (println l))))
 
+;(print-board [:x nil :x :o :o :o nil nil :x] 3)
 
 (defn print-board-compact
   "print `board` of size `board-size` * `board-size` compact"
@@ -50,12 +54,12 @@
       (println l))))
 
 
-;; (print-board [:x nil :x :o :o :o nil nil :x] 3)
+;(print-board-compact [:x nil :x :o :o :o nil nil :x] 3)
 
 
-;(let [g (create-game 3)
-;      g2 (assoc-in g [:board 4] :x)))
-;  (tc/print-board (:board g2) (:board-size g)))
+;--------------------------------------------------------------------
+; LOGIC
+;--------------------------------------------------------------------
 
 (defn row-col->index
   "Convert `row` `col` coordinates of board to linear index"
@@ -114,26 +118,30 @@
   (or (>= (reduce max (:rows tracker)) board-size)
       (>= (reduce max (:cols tracker)) board-size)
       (>= (:diag tracker) board-size)
-      (>= (:rdiag tracker)) board-size))
+      (>= (:rdiag tracker) board-size)))
+
+(winning-condition? {:rows [0 0 0] :cols [0 0 0] :diag 0 :rdiag 0} 3)
 
 
 (defn turn [game row col]
   (let [player (:current-player game)
         bs (:board-size game)
-        new-board (mark-position (:board game) bs row col player)
+        board (:board game)
         turns (conj (:turns game) {:p player :r row :c col})
         new-game (-> game
                      (track-winner row col)
-                     (assoc :board new-board)
+                     (assoc :board (mark-position board bs row col player))
                      (assoc :turns turns)
-                      ; switch player
+                     ; switch player
                      (assoc :current-player (player {:x :o :o :x})))]
     new-game))
 
 
-;--------------- Playing
+;--------------------------------------------------------------------
+; SIMULATION
+;--------------------------------------------------------------------
 
-(def GAME (create-game 3))
+(def GAME (new-game 3))
 
 ; simulated turns
 (def TURNS [[:x 0 0] [:x 1 1] [:x 2 2] [:o 0 2]])
@@ -156,6 +164,7 @@
     (println "X won!!!"))
   (when (winning-condition? (:win-tracker-o g) (:board-size g))
     (println "O won!!!")))
+  ;(clojure.pprint/pprint g))
 
 
 ; play the game

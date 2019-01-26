@@ -68,21 +68,20 @@
 
 
 (defn update-diag?
-  "Check if row `r` and col `c` are on diagonal and if so update tracker `t`"
-  ; TODO: is a tracker really required here?
-  ; TODO: This 'else' branch looks ugly, there needs to be a better way
-  [t r c]
+  "Check if row `r` and col `c` are on diagonal and if so update tracker `val`."
+  [val r c]
   (if (= r c)
-    (update t :diag inc)
-    t))
+    (inc val)
+    val))
 
 
-(defn update-rdiag? [t r c bs]
+(defn update-rdiag?
   "Check if row `r` and col `c` are on reverse diagonal of board size `b`
-  and if so update tracker `t`"
+  and if so update `val`."
+  [val r c bs]
   (if (= (+ r c) (dec bs))
-    (update t :rdiag inc)
-    t))
+    (inc val)
+    val))
 
 
 (defn update-win-tracker
@@ -91,8 +90,13 @@
   (-> tracker
       (update :rows #(update % r inc))
       (update :cols #(update % c inc))
-      (update-diag? r c)
-      (update-rdiag? r c bs)))
+      (update :diag update-diag? r c)
+      (update :rdiag update-rdiag? r c bs)))
+
+
+;(update-win-tracker
+;  {:rows [0 0 0] :cols [0 0 0] :diag 0 :rdiag 0}
+;  1 1 3)
 
 
 (defn track-winner

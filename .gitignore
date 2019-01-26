@@ -1,0 +1,21 @@
+# mine
+.idea/
+doc/
+CHANGELOG.md
+LICENSE
+project_linux.clj
+tictactoe.iml
+
+
+# generated
+/target
+/classes
+/checkouts
+pom.xml
+pom.xml.asc
+*.jar
+*.class
+/.lein-*
+/.nrepl-port
+.hgignore
+.hg/

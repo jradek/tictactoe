@@ -12,7 +12,8 @@
 (defn create-game [board-size]
   {:board          (vec (replicate (* board-size board-size) nil))
    :board-size     board-size
-   :current-player nil
+   :current-player :x
+   :turns []
    :win-tracker-x  (tracker board-size)
    :win-tracker-o  (tracker board-size)})
 
@@ -36,6 +37,15 @@
   (let [row-strs (map row->str (partition board-size board))
         spacer (str (reduce str (replicate (dec board-size) "--+-")) "-")
         lines (interpose spacer row-strs)]
+    (doseq [l lines]
+      (println l))))
+
+
+(defn print-board-compact
+  "print `board` of size `board-size` * `board-size` compact"
+  [board board-size]
+  (let [lines (map #(apply str %)
+                   (partition board-size (map cell->str board)))]
     (doseq [l lines]
       (println l))))
 
@@ -105,11 +115,47 @@
 
 (defn turn [game row col]
   (let [player (:current-player game)
-        board-size (:board-size game)
-        new-board (mark-position (:board game) board-size row col player)]
-    (assoc game :board new-board
-                ; switch player
-                :current-player (player {:x :o :o :x}))))
+        bs (:board-size game)
+        new-board (mark-position (:board game) bs row col player)
+        turns (conj (:turns game) {:p player :r row :c col})
+        new-game (-> game
+                     (track-winner row col)
+                     (assoc :board new-board)
+                     (assoc :turns turns)
+                      ; switch player
+                     (assoc :current-player (player {:x :o :o :x})))]
+    new-game))
+
+
+;--------------- Playing
+
+(def GAME (create-game 3))
+
+; simulated turns
+(def TURNS [[:x 0 0] [:x 1 1] [:x 2 2] [:o 0 2]])
+
+(defn simulate-turn [g [player row col]]
+  (-> g
+      ; set the player, independent from actual rules
+      (assoc :current-player player)
+      ; make the turn
+      (turn row col)))
+
+(defn show-game-state [{:keys [turns board] :as g}]
+  (let [n (count turns)]
+    (println "- Round: " n " -------------")
+    (if (> n 0)
+      ; fetch previous player from state, because round is already played
+      (println "Player " (cell->str (:p (turns (dec n)))) " played")))
+  (print-board-compact board 3)
+  (when (winning-condition? (:win-tracker-x g) (:board-size g))
+    (println "X won!!!"))
+  (when (winning-condition? (:win-tracker-o g) (:board-size g))
+    (println "O won!!!")))
+
+
+; play the game
+(map show-game-state (reductions simulate-turn GAME TURNS))
 
 
 (defn -main

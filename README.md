@@ -2,6 +2,32 @@
 
 FIXME: description
 
+## Running from commandline
+
+* with leiningen
+    ```bash
+    lein run <arguments>
+    ```
+
+* build java (using uberjar)
+    ```bash
+    lein uberjar
+    java -jar target/uberjar/tictactoe-*-standalone.jar <arguments>
+    ```
+
+## Testing
+
+* from commandline
+    ```bash
+    lein test
+    ```
+
+* in REPL
+    ```clojure
+    (in-ns 'tictactoe.core-test)
+    (run-tests)
+    ```
+
 ## Installation
 
 Download from http://example.com/FIXME.

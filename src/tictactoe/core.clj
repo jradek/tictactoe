@@ -1,4 +1,5 @@
 (ns tictactoe.core
+  (:require [clojure.string])
   (:gen-class))
 
 (defn new-tracker [board-size]
@@ -48,7 +49,9 @@
 (defn print-board-compact
   "print `board` of size `board-size` * `board-size` compact"
   [board board-size]
-  (let [lines (map #(apply str %)
+  (let [lines (map
+                ;#(apply str %)
+                clojure.string/join
                    (partition board-size (map cell->str board)))]
     (doseq [l lines]
       (println l))))
@@ -102,16 +105,6 @@
 ;  {:rows [0 0 0] :cols [0 0 0] :diag 0 :rdiag 0}
 ;  1 1 3)
 
-
-(defn track-winner
-  "Track the winner for current player in `game`"
-  [{:keys [current-player board-size] :as game} row col]
-  ; select the correct field in game ...
-  (let [field (current-player {:x :win-tracker-x :o :win-tracker-o})]
-    ; and update that tracker
-    (update game field update-win-tracker row col board-size)))
-
-
 (defn winning-condition?
   "Check if `tracker` of `board-size` has winning condition"
   [tracker board-size]
@@ -120,58 +113,73 @@
       (>= (:diag tracker) board-size)
       (>= (:rdiag tracker) board-size)))
 
-(winning-condition? {:rows [0 0 0] :cols [0 0 0] :diag 0 :rdiag 0} 3)
+(comment
+  (winning-condition? {:rows [0 0 0] :cols [0 0 0] :diag 0 :rdiag 0} 3))
 
 
 (defn turn [game row col]
   (let [player (:current-player game)
         bs (:board-size game)
         board (:board game)
-        turns (conj (:turns game) {:p player :r row :c col})
-        new-game (-> game
-                     (track-winner row col)
-                     (assoc :board (mark-position board bs row col player))
-                     (assoc :turns turns)
-                     ; switch player
-                     (assoc :current-player (player {:x :o :o :x})))]
-    new-game))
+        turns (:turns game)]
+    (-> game
+        ; update board
+        (assoc :board (mark-position board bs row col player))
+        ; record the turns
+        (assoc :turns (conj turns {:p player :r row :c col}))
+        ; track the winner
+        (cond->
+          (= player :x)
+          (update :win-tracker-x update-win-tracker row col bs)
+
+          (= player :o)
+          (update :win-tracker-o update-win-tracker row col bs))
+        ; switch player
+        (assoc :current-player (player {:x :o :o :x})))))
 
 
 ;--------------------------------------------------------------------
 ; SIMULATION
 ;--------------------------------------------------------------------
 
-(def GAME (new-game 3))
+(comment
+  (def GAME (new-game 3)))
 
-; simulated turns
-(def TURNS [[:x 0 0] [:x 1 1] [:x 2 2] [:o 0 2]])
+(comment
+  ; simulated turns
+  (def TURNS [[:x 0 0] [:x 1 1] [:x 2 2] [:o 0 2]]))
 
-(defn simulate-turn [g [player row col]]
-  (-> g
-      ; set the player, independent from actual rules
-      (assoc :current-player player)
-      ; make the turn
-      (turn row col)))
+(comment
+  (defn simulate-turn [g [player row col]]
+    (-> g
+        ; set the player, independent from actual rules
+        (assoc :current-player player)
+        ; make the turn
+        (turn row col))))
 
-(defn show-game-state [{:keys [turns board] :as g}]
-  (let [n (count turns)]
-    (println "- Round: " n " -------------")
-    (if (> n 0)
-      ; fetch previous player from state, because round is already played
-      (println "Player " (cell->str (:p (turns (dec n)))) " played")))
-  (print-board-compact board 3)
-  (when (winning-condition? (:win-tracker-x g) (:board-size g))
-    (println "X won!!!"))
-  (when (winning-condition? (:win-tracker-o g) (:board-size g))
-    (println "O won!!!")))
+(comment
+  (defn show-game-state [{:keys [turns board] :as g}]
+    (let [n (count turns)]
+      (println "- Round: " n " -------------")
+      (if (pos? n)
+        ; fetch previous player from state, because round is already played
+        (println "Player " (cell->str (:p (turns (dec n)))) " played")))
+    (print-board-compact board 3)
+    (when (winning-condition? (:win-tracker-x g) (:board-size g))
+      (println "X won!!!"))
+    (when (winning-condition? (:win-tracker-o g) (:board-size g))
+      (println "O won!!!"))))
   ;(clojure.pprint/pprint g))
 
-
-; play the game
-(map show-game-state (reductions simulate-turn GAME TURNS))
+(comment
+  ; play the game
+  (map show-game-state (reductions simulate-turn GAME TURNS)))
 
 
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
-  (println "Hello, World!"))
+  (->> args
+       (interpose " ")
+       (apply str)
+       (println "Executed with the following args: ")))

@@ -15,6 +15,19 @@ FIXME: description
     java -jar target/uberjar/tictactoe-*-standalone.jar <arguments>
     ```
 
+## REPL workflow
+
+* Reload all the code
+
+```clojure
+(in-ns 'user)
+(refresh)
+```
+
+* Use the `tictactoe.fiddle` namespace to play around with code
+
+* Evaluate `(comment)` forms in source code
+
 ## Testing
 
 * from commandline
